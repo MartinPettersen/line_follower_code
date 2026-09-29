@@ -8,6 +8,7 @@ uint16_t sensorValues[SensorCount];
 const int switchPin = 3;
 bool isMotorOn = false;
 
+int lastError = 0;
 
 
 int isCalibrationLightOn = false;
@@ -56,6 +57,19 @@ class Motor {
       digitalWrite(IN1, LOW);
       digitalWrite(IN2, HIGH);
       analogWrite(PWM, speed);
+    }
+
+    void drive(int speed) {
+      if (speed > 0) {
+
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        analogWrite(PWM, speed);
+      } else {
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        analogWrite(PWM, -speed);  
+      }
     }
 
     void driveBackward(int speed) {
@@ -148,21 +162,25 @@ void loop()
   if (isMotorOn) {
     
     float proportionalGain = 0.08;
+    float derivativeGain = 0.22;
+    int lastError = 0;
     int error = position - 2500;
-    int turn = error * proportionalGain;
-    int motorBuff = 55;
+    int derivative = error - lastError;
+    lastError = error;
+    //int turn = error * proportionalGain;
+    int turn = error * proportionalGain + derivativeGain * derivative;
 
 
-    int topSpeed = 100;
+    int topSpeed = 80;
     int baseRight = topSpeed;
     int baseLeft  = topSpeed;
 
 
-    int rightSpeed = constrain(baseRight + turn, 0, topSpeed);
-    int leftSpeed  = constrain(baseLeft  - turn, 0, topSpeed);
+    int rightSpeed = constrain(baseRight + turn, -topSpeed, topSpeed);
+    int leftSpeed  = constrain(baseLeft  - turn, -topSpeed, topSpeed);
 
-    rightMotor.driveForward(rightSpeed);
-    leftMotor.driveForward(leftSpeed);
+    rightMotor.drive(rightSpeed);
+    leftMotor.drive(leftSpeed);
 /*
   if (position > 2000 && position < 3000)
   {
