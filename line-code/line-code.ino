@@ -13,6 +13,10 @@ int lastError = 0;
 
 int isCalibrationLightOn = false;
 
+int lastLeftSpeed = 0;
+int lastRightSpeed = 0;
+
+int lostDirection = 2;
 
 const int AIN1 = 13;
 const int AIN2 = 12;
@@ -179,8 +183,42 @@ void loop()
     int rightSpeed = constrain(baseRight + turn, -topSpeed, topSpeed);
     int leftSpeed  = constrain(baseLeft  - turn, -topSpeed, topSpeed);
 
-    rightMotor.drive(rightSpeed);
-    leftMotor.drive(leftSpeed);
+    bool noLineDetected = true;
+
+    for (uint8_t i = 0; i < SensorCount; i++)
+    {
+
+      if (700 <= sensorValues[i]) {
+        noLineDetected = false;
+        lastLeftSpeed = leftSpeed;
+        lastRightSpeed = rightSpeed;
+      }
+
+      if (700 <= sensorValues[0]){
+        lostDirection = 0;
+      }
+
+      if (700 <= sensorValues[5]){
+        lostDirection = 1;
+      }
+
+    }
+
+
+    if (noLineDetected) {
+      if (lostDirection == 0){
+
+        rightMotor.drive(-topSpeed);
+        leftMotor.drive(topSpeed);      
+      } else if (lostDirection == 1) {
+        rightMotor.drive(topSpeed);
+        leftMotor.drive(-topSpeed);      
+      }
+    } else {
+
+      rightMotor.drive(rightSpeed);
+      leftMotor.drive(leftSpeed);
+    }
 /*
   if (position > 2000 && position < 3000)
   {
